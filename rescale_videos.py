@@ -37,11 +37,11 @@ def get_video_params(video_file):
     ffprobe_output = subprocess.check_output(args).decode('utf-8')
     ffprobe_output = json.loads(ffprobe_output)
     
-    if isinstance(ffprobe_output, list):
-        n_streams = len(ffprobe_output)
+    if isinstance(ffprobe_output['streams'], list):
+        n_streams = len(ffprobe_output['streams'])
         print("Number Streams: {}".format(n_streams))
         video_stream = None
-        for stream in ffprobe_output:
+        for stream in ffprobe_output['streams']:
             if isinstance(stream, dict):
                 if stream['codec_type'].lower() == 'video':
                     video_stream = stream
