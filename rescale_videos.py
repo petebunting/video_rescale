@@ -3,9 +3,13 @@
 import os
 import argparse
 import pprint
+import subprocess
+import shlex
+import json
 
 VIDEO_EXTS = ['.mp4', '.m4p', '.m4v', '.webm', '.mpg', '.mp2', '.mpeg', '.mpe', '.mpv', '.ogg', '.wmv', '.mov', '.qt', '.avi', '.flv', '.swf', '.avchd']
 
+"""
 def get_video_params(video_file):
     from ffprobe import FFProbe
     metadata=FFProbe(video_file)
@@ -23,24 +27,40 @@ def get_video_params(video_file):
         video_params['fps'] = float(video_params['frames']) / float(video_params['duration_seconds'])
 
     return video_params
+"""
 
+def get_video_params(video_file):
+    cmd = "ffprobe -v quiet -print_format json -show_streams"
+    args = shlex.split(cmd)
+    args.append(pathToInputVideo)
+    # run the ffprobe process, decode stdout into utf-8 & convert to JSON
+    ffprobeOutput = subprocess.check_output(args).decode('utf-8')
+    ffprobeOutput = json.loads(ffprobeOutput)
+
+    # prints all the metadata available:
+    pp = pprint.PrettyPrinter(indent=2)
+    pp.pprint(ffprobeOutput)
+    
+    return None
 
 def rescale_file(input_file, output_file):
     video_params = get_video_params(input_file)
-    pprint.pprint(video_params)
-    cmd = ''
-    print(input_file)
-    if (video_params['frame_size'][0] == 1920) and (video_params['frame_size'][1] == 1080):
-        print("Export Video without rescaling...")
-        cmd = 'docker run -itv $PWD:/data docker_imagemagickffmpeg ffmpeg -i "{}" -c:v libx265 -preset medium -crf 20 -tag:v hvc1 -c:a aac -b:a 224k -b:v 16M -filter:v fps=fps=30 "{}"'.format(input_file, output_file)
-    elif video_params['frame_size'][1] > video_params['frame_size'][0]:
-        print("Portrait Video - needs padding")
-    elif video_params['frame_size'][1] < 1080:
-        print("Upscale")
-    elif video_params['frame_size'][1] > 1080:
-        print("Downscale")
-    if cmd != '':
-        print(cmd)
+    if video_params not None:
+        cmd = None
+        print(input_file)
+        if (video_params['frame_size'][0] == 1920) and (video_params['frame_size'][1] == 1080):
+            print("Export Video without rescaling...")
+            cmd = 'docker run -itv $PWD:/data docker_imagemagickffmpeg ffmpeg -i "{}" -c:v libx265 -preset medium -crf 20 -tag:v hvc1 -c:a aac -b:a 224k -b:v 16M -filter:v fps=fps=30 "{}"'.format(input_file, output_file)
+        elif video_params['frame_size'][1] > video_params['frame_size'][0]:
+            print("Portrait Video - needs padding")
+        elif video_params['frame_size'][1] < 1080:
+            print("Upscale")
+            cmd = 'docker run -itv $PWD:/data docker_imagemagickffmpeg ffmpeg -i "{}" -c:v libx265 -preset medium -crf 20 -tag:v hvc1 -c:a aac -b:a 224k -b:v 16M -filter:v fps=fps=30 -vf scale=1920x1080:flags=lanczos "{}"'.format(input_file, output_file)
+        elif video_params['frame_size'][1] > 1080:
+            print("Downscale")
+            cmd = 'docker run -itv $PWD:/data docker_imagemagickffmpeg ffmpeg -i "{}" -c:v libx265 -preset medium -crf 20 -tag:v hvc1 -c:a aac -b:a 224k -b:v 16M -filter:v fps=fps=30 -vf scale=1920x1080:flags=lanczos "{}"'.format(input_file, output_file)
+        if cmd != '':
+            print(cmd)
 
 def rescale_dir_videos(input_dir, output_dir):
     input_files = os.listdir(input_dir)
