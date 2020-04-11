@@ -28,6 +28,37 @@ def get_video_params(video_file):
 
     return video_params
 """
+def isNumber(str_val):
+    """
+    A function which tests whether the input string contains a number of not.
+    """
+    try:
+        float(str_val)  # for int, long and float
+    except ValueError:
+        try:
+            complex(str_val)  # for complex
+        except ValueError:
+            return False
+    return True
+
+def doesJSONPathExist(json_obj, tree_sequence):
+    """
+    A function which tests whether a path exists within JSON file.
+    :param json_obj:
+    :param tree_sequence: list of strings
+    :return: boolean
+    """
+    curr_json_obj = json_obj
+    steps_str = ""
+    pathExists = True
+    for tree_step in tree_sequence:
+        steps_str = steps_str+":"+tree_step
+        if tree_step in curr_json_obj:
+            curr_json_obj = curr_json_obj[tree_step]
+        else:
+            pathExists = False
+            break
+    return pathExists
 
 def get_video_params(video_file):
     cmd = "ffprobe -v quiet -print_format json -show_streams"
@@ -51,28 +82,46 @@ def get_video_params(video_file):
         raise Exception("Expecting ffprobe output to be a list.")
     
     # prints all the metadata available:
+    video_params = None
     if video_stream is not None:
-        pp = pprint.PrettyPrinter(indent=2)
-        pp.pprint(video_stream)
+        if isNumber(video_stream['nb_frames']):
+            video_params['frames'] = int(video_stream['nb_frames'])
+        if isNumber(video_stream['width']):
+            video_params['frame_width'] = int(video_stream['width'])
+        if isNumber(video_stream['height']):
+            video_params['frame_height'] = int(video_stream['height'])
+        if isNumber(video_stream['duration']):
+            video_params['duration_seconds'] = float(video_stream['duration'])
+        video_params['codec'] = video_stream['codec_name']
+        video_params['codec_descrip'] = video_stream['codec_long_name']
+        video_params['rotation'] = 0
+        if doesJSONPathExist(video_stream, ['tags', 'rotate']):
+            if isNumber(video_stream['tags']['rotate']):
+                video_params['rotation'] = float(video_stream['tags']['rotate'])
     
-    return None
+        if ('frames' in video_params) and ('duration_seconds' in video_params):
+            video_params['fps'] = float(video_params['frames']) / float(video_params['duration_seconds'])
+    
+    return video_params
 
 def rescale_file(input_file, output_file):
     video_params = get_video_params(input_file)
     if video_params is not None:
         cmd = None
         print(input_file)
-        if (video_params['frame_size'][0] == 1920) and (video_params['frame_size'][1] == 1080):
+        if (video_params['frame_width'] == 1920) and (video_params['frame_height'] == 1080) and (video_params['rotation'] == 0):
             print("Export Video without rescaling...")
             cmd = 'docker run -itv $PWD:/data docker_imagemagickffmpeg ffmpeg -i "{}" -c:v libx265 -preset medium -crf 20 -tag:v hvc1 -c:a aac -b:a 224k -b:v 16M -filter:v fps=fps=30 "{}"'.format(input_file, output_file)
-        elif video_params['frame_size'][1] > video_params['frame_size'][0]:
-            print("Portrait Video - needs padding")
-        elif video_params['frame_size'][1] < 1080:
+        elif (video_params['frame_height'] < 1080) and (video_params['rotation'] == 0):
             print("Upscale")
             cmd = 'docker run -itv $PWD:/data docker_imagemagickffmpeg ffmpeg -i "{}" -c:v libx265 -preset medium -crf 20 -tag:v hvc1 -c:a aac -b:a 224k -b:v 16M -filter:v fps=fps=30 -vf scale=1920x1080:flags=lanczos "{}"'.format(input_file, output_file)
-        elif video_params['frame_size'][1] > 1080:
+        elif (video_params['frame_height'] > 1080) and (video_params['rotation'] == 0):
             print("Downscale")
             cmd = 'docker run -itv $PWD:/data docker_imagemagickffmpeg ffmpeg -i "{}" -c:v libx265 -preset medium -crf 20 -tag:v hvc1 -c:a aac -b:a 224k -b:v 16M -filter:v fps=fps=30 -vf scale=1920x1080:flags=lanczos "{}"'.format(input_file, output_file)
+        elif (video_params['frame_height'] > video_params['frame_width']) or (video_params['rotation'] != 0):
+            print("Portrait Video - needs padding")
+        else:
+            raise Exception("Do not know what to do with input file: '{}'".format(input_file))
         if cmd != '':
             print(cmd)
 
