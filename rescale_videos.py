@@ -115,10 +115,10 @@ def rescale_file(input_file, output_file):
             cmd = 'docker run -itv $PWD:/data docker_imagemagickffmpeg ffmpeg -i "{}" -c:v libx265 -preset medium -crf 20 -tag:v hvc1 -c:a aac -b:a 224k -b:v 16M -filter:v fps=fps=30 "{}"'.format(input_file, output_file)
         elif (video_params['frame_height'] > video_params['frame_width']) or ((video_params['rotation'] != 0) and (video_params['rotation'] != 180)):
             print("Portrait Video - needs padding")
-        elif (video_params['frame_height'] < 1080) and (video_params['rotation'] == 0):
+        elif (video_params['frame_height'] < 1080) and ((video_params['rotation'] == 0) or (video_params['rotation'] == 180)):
             print("Upscale")
             cmd = 'docker run -itv $PWD:/data docker_imagemagickffmpeg ffmpeg -i "{}" -c:v libx265 -preset medium -crf 20 -tag:v hvc1 -c:a aac -b:a 224k -b:v 16M -filter:v fps=fps=30 -vf scale=1920x1080:flags=lanczos "{}"'.format(input_file, output_file)
-        elif (video_params['frame_height'] > 1080) and (video_params['rotation'] == 0):
+        elif (video_params['frame_height'] > 1080) and ((video_params['rotation'] == 0) or (video_params['rotation'] == 180)):
             print("Downscale")
             cmd = 'docker run -itv $PWD:/data docker_imagemagickffmpeg ffmpeg -i "{}" -c:v libx265 -preset medium -crf 20 -tag:v hvc1 -c:a aac -b:a 224k -b:v 16M -filter:v fps=fps=30 -vf scale=1920x1080:flags=lanczos "{}"'.format(input_file, output_file)
         else:
