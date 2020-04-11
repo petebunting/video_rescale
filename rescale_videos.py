@@ -34,12 +34,26 @@ def get_video_params(video_file):
     args = shlex.split(cmd)
     args.append(video_file)
     # run the ffprobe process, decode stdout into utf-8 & convert to JSON
-    ffprobeOutput = subprocess.check_output(args).decode('utf-8')
-    ffprobeOutput = json.loads(ffprobeOutput)
-
+    ffprobe_output = subprocess.check_output(args).decode('utf-8')
+    ffprobe_output = json.loads(ffprobeOutput)
+    
+    if isinstance(ffprobe_output, list)
+        n_streams = len(ffprobe_output)
+        print("Number Streams: {}".format(n_streams))
+        video_stream = None
+        for stream in ffprobe_output:
+            if isinstance(stream, dict):
+                if stream['codec_type'] == 'video'
+                    video_stream = stream
+            else:
+                raise Exception("Expecting stream to be presented by a dict")
+    else:
+        raise Exception("Expecting ffprobe output to be a list.")
+    
     # prints all the metadata available:
-    pp = pprint.PrettyPrinter(indent=2)
-    pp.pprint(ffprobeOutput)
+    if video_stream is not None:
+        pp = pprint.PrettyPrinter(indent=2)
+        pp.pprint(video_stream)
     
     return None
 
