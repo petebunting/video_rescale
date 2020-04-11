@@ -35,7 +35,7 @@ def get_video_params(video_file):
     args.append(video_file)
     # run the ffprobe process, decode stdout into utf-8 & convert to JSON
     ffprobe_output = subprocess.check_output(args).decode('utf-8')
-    ffprobe_output = json.loads(ffprobeOutput)
+    ffprobe_output = json.loads(ffprobe_output)
     
     if isinstance(ffprobe_output, list):
         n_streams = len(ffprobe_output)
