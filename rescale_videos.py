@@ -43,7 +43,7 @@ def get_video_params(video_file):
         video_stream = None
         for stream in ffprobe_output:
             if isinstance(stream, dict):
-                if stream['codec_type'] == 'video'
+                if stream['codec_type'].lower() == 'video':
                     video_stream = stream
             else:
                 raise Exception("Expecting stream to be presented by a dict")
