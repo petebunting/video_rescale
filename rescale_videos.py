@@ -37,7 +37,7 @@ def get_video_params(video_file):
     ffprobe_output = subprocess.check_output(args).decode('utf-8')
     ffprobe_output = json.loads(ffprobeOutput)
     
-    if isinstance(ffprobe_output, list)
+    if isinstance(ffprobe_output, list):
         n_streams = len(ffprobe_output)
         print("Number Streams: {}".format(n_streams))
         video_stream = None
