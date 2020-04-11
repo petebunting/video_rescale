@@ -84,6 +84,7 @@ def get_video_params(video_file):
     # prints all the metadata available:
     video_params = None
     if video_stream is not None:
+        video_params = dict()
         if isNumber(video_stream['nb_frames']):
             video_params['frames'] = int(video_stream['nb_frames'])
         if isNumber(video_stream['width']):
