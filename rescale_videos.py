@@ -45,7 +45,7 @@ def get_video_params(video_file):
 
 def rescale_file(input_file, output_file):
     video_params = get_video_params(input_file)
-    if video_params not None:
+    if video_params is not None:
         cmd = None
         print(input_file)
         if (video_params['frame_size'][0] == 1920) and (video_params['frame_size'][1] == 1080):
@@ -82,12 +82,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     if os.path.isfile(args.input):
-        if not os.path.isfile(args.output):
-            raise Exception("The output must be a file is the input is a file.")
+        if os.path.isdir(args.output):
+            raise Exception("The output must be a file as the input is a file.")
         rescale_file(args.input, args.output)
     elif os.path.isdir(args.input):
         if not os.path.isdir(args.output):
-            raise Exception("The output must be a directory is the input is a directory.")
+            raise Exception("The output must be a directory as the input is a directory.")
         rescale_dir_videos(args.input, args.output)
     else:
         raise Exception("Input is neither a file or directory...")
