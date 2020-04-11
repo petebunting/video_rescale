@@ -4,6 +4,7 @@ LABEL authors="Pete Bunting"
 LABEL maintainer="petebunting@mac.com" 
 
 ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
+ENV PATH /opt/miniconda/bin:$PATH
 
 RUN apt-get update --fix-missing && \
     apt-get install -y apt-utils wget bzip2 curl git binutils vim imagemagick ffmpeg && \

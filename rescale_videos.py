@@ -1,8 +1,10 @@
+#!/usr/bin/env python
+
 import os
 import argparse
 import pprint
 
-VIDEO_EXTS = ['mp4', 'mov', 'avi']
+VIDEO_EXTS = ['.mp4', '.m4p', '.m4v', '.webm', '.mpg', '.mp2', '.mpeg', '.mpe', '.mpv', '.ogg', '.wmv', 'mov', '.qt', 'avi', '.flv', '.swf', '.avchd']
 
 def get_video_params(video_file):
     from ffprobe import FFProbe
@@ -16,14 +18,25 @@ def get_video_params(video_file):
             video_params['duration_seconds'] = stream.duration_seconds()
             video_params['codec'] = stream.codec()
             video_params['codec_description'] = stream.codec_description()
-            video_params['codec_tag'] = stream.codec_tag()
+
+    if ('frames' in video_params) and ('duration_seconds' in video_params):
+        video_params['fps'] = float(video_params['frames']) / float(video_params['duration_seconds'])
+
     return video_params
 
 
 def rescale_file(input_file, output_file):
     video_params = get_video_params(input_file)
     pprint.pprint(video_params)
-
+    if (video_params['frame_size'][0] == 1920) and (video_params['frame_size'][1] == 1080):
+        print("Export Video without rescaling...")
+        cmd = ""
+    elif video_params['frame_size'][1] > video_params['frame_size'][0]:
+        print("Portrait Video - needs padding")
+    elif video_params['frame_size'][1] < 1080:
+        print("Upscale")
+    elif video_params['frame_size'][1] > 1080:
+        print("Downscale")
 
 def rescale_dir_videos(input_dir, output_dir):
     input_files = os.listdir(input_dir)
@@ -31,9 +44,10 @@ def rescale_dir_videos(input_dir, output_dir):
         input_file = os.path.join(input_dir, input_file)
         if os.path.isfile(input_file):
             file_ext = os.path.splitext(input_file)[1]
-            print(file_ext)
             if file_ext.lower() in VIDEO_EXTS:
-                rescale_file(input_file, '')
+                basename = os.path.splitext(os.path.basename(input_file))[0]
+                output_file = os.path.join(output_dir, "{}.mp4".format(basename))
+                rescale_file(input_file, output_file)
 
 
 if __name__ == "__main__":
@@ -44,8 +58,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     if os.path.isfile(args.input):
+        if not os.path.isfile(args.output):
+            raise Exception("The output must be a file is the input is a file.")
         rescale_file(args.input, args.output)
     elif os.path.isdir(args.input):
+        if not os.path.isdir(args.output):
+            raise Exception("The output must be a directory is the input is a directory.")
         rescale_dir_videos(args.input, args.output)
     else:
         raise Exception("Input is neither a file or directory...")
