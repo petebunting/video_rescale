@@ -70,7 +70,6 @@ def get_video_params(video_file):
     
     if isinstance(ffprobe_output['streams'], list):
         n_streams = len(ffprobe_output['streams'])
-        print("Number Streams: {}".format(n_streams))
         video_stream = None
         for stream in ffprobe_output['streams']:
             if isinstance(stream, dict):
@@ -107,6 +106,7 @@ def get_video_params(video_file):
 
 def rescale_file(input_file, output_file):
     video_params = get_video_params(input_file)
+    pprint.pprint(video_params)
     if video_params is not None:
         cmd = None
         print(input_file)
@@ -123,8 +123,11 @@ def rescale_file(input_file, output_file):
             print("Portrait Video - needs padding")
         else:
             raise Exception("Do not know what to do with input file: '{}'".format(input_file))
-        if cmd != '':
+        if cmd is not None:
             print(cmd)
+    else:
+        raise Exception("The video paramaters could not be found...")
+    print("\n\n")
 
 def rescale_dir_videos(input_dir, output_dir):
     input_files = os.listdir(input_dir)
